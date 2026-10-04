@@ -688,19 +688,22 @@ var resetAllSlide = function resetAllSlide() {
 };
 resetAllSlide();
 
-// swipe up
-var swipeUp = function swipeUp() {
+// navigasi slide horizontal
+var swipeNext = function swipeNext() {
   resetAllSlide();
   currentSlide = currentSlide < slides.length - 1 ? currentSlide + 1 : 0;
   jumpSlide(currentSlide, false);
   eventUp();
 };
-var swipeDown = function swipeDown() {
+var swipePrev = function swipePrev() {
   resetAllSlide();
-  currentSlide = currentSlide > 0 ? currentSlide - 1 : currentSlide;
+  currentSlide = currentSlide > 0 ? currentSlide - 1 : slides.length - 1;
   jumpSlide(currentSlide);
   eventUp();
 };
+var swipeUp = swipeNext;
+var swipeDown = swipePrev;
+
 var jumpSlide = function jumpSlide(index) {
   var pause = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
   resetAllSlide();
@@ -728,43 +731,35 @@ var events = {
     up: "touchend"
   }
 };
-var initialY = 0,
-  newY = 0;
-
-var isGalleryActive = function () {
-  var activeSlide = slides[currentSlide];
-  return activeSlide && (activeSlide.id === "gallerySlide" || activeSlide.querySelector("#galleryGrid"));
-};
+var initialX = 0,
+  initialY = 0;
 
 var eventMove = function eventMove(e) {
-  if (isGalleryActive()) {
-    return;
-  }
-  var newY = !isTouchDevice() ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-  if (initialY - 50 > newY) {
-    pauseInvitation();
-    swipeUp();
-  }
-  if (initialY < newY - 50) {
-    swipeDown();
-    pauseInvitation();
+  var currentX = !isTouchDevice() ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  var currentY = !isTouchDevice() ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+  var diffX = currentX - initialX;
+  var diffY = currentY - initialY;
+
+  // Hanya proses jika pergerakan horizontal lebih dominan dan melebihi threshold
+  // Scroll vertikal (atas/bawah) bebas digunakan untuk scroll konten halaman
+  if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
+    if (diffX > 60) {
+      // Geser ke kanan -> halaman selanjutnya
+      pauseInvitation();
+      swipeNext();
+    } else if (diffX < -60) {
+      // Geser ke kiri -> halaman sebelumnya
+      pauseInvitation();
+      swipePrev();
+    }
   }
 };
 var eventUp = function eventUp(e) {
   window.removeEventListener(events[deviceType].move, eventMove, false);
 };
 var eventDown = function eventDown(e) {
-  // Jika sedang di menu galeri, jangan ubah slide saat scroll/swipe
-  if (isGalleryActive()) {
-    return;
-  }
-  // Jika target berada di dalam elemen scrollable (galeri, daftar ucapan, modal)
-  if (e.target && e.target.closest) {
-    if (e.target.closest("#galleryGrid") || e.target.closest("#gallerySlide") || e.target.closest("#daftarUcapanContainer") || e.target.closest(".modal") || e.target.closest("#ucapanList")) {
-      return;
-    }
-  }
-  if (e.cancelable) e.preventDefault();
+  // Tidak menggunakan e.preventDefault() agar scroll vertikal alami tetap berfungsi di seluruh halaman
+  initialX = !isTouchDevice() ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
   initialY = !isTouchDevice() ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   window.addEventListener(events[deviceType].up, eventUp, false);
   window.addEventListener(events[deviceType].move, eventMove, false);
