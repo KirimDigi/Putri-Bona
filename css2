@@ -1,0 +1,14 @@
+﻿@font-face {
+  font-family: 'Carattere';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(s/carattere/v8/4iCv6Kp1b9dXlgt_CkvTtw.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Modern Antiqua';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(s/modernantiqua/v26/NGStv5TIAUg6Iq_RLNo_2dp1sI1E.ttf) format('truetype');
+}
