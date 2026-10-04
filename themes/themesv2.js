@@ -730,8 +730,17 @@ var events = {
 };
 var initialY = 0,
   newY = 0;
+
+var isGalleryActive = function () {
+  var activeSlide = slides[currentSlide];
+  return activeSlide && (activeSlide.id === "gallerySlide" || activeSlide.querySelector("#galleryGrid"));
+};
+
 var eventMove = function eventMove(e) {
-  var newY = !isTouchDevice() ? e.clientY : e.touches[0].clientY;
+  if (isGalleryActive()) {
+    return;
+  }
+  var newY = !isTouchDevice() ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   if (initialY - 50 > newY) {
     pauseInvitation();
     swipeUp();
@@ -745,11 +754,48 @@ var eventUp = function eventUp(e) {
   window.removeEventListener(events[deviceType].move, eventMove, false);
 };
 var eventDown = function eventDown(e) {
+  // Jika sedang di menu galeri, jangan ubah slide saat scroll/swipe
+  if (isGalleryActive()) {
+    return;
+  }
+  // Jika target berada di dalam elemen scrollable (galeri, daftar ucapan, modal)
+  if (e.target && e.target.closest) {
+    if (e.target.closest("#galleryGrid") || e.target.closest("#gallerySlide") || e.target.closest("#daftarUcapanContainer") || e.target.closest(".modal") || e.target.closest("#ucapanList")) {
+      return;
+    }
+  }
   if (e.cancelable) e.preventDefault();
-  initialY = !isTouchDevice() ? e.clientY : e.touches[0].clientY;
+  initialY = !isTouchDevice() ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   window.addEventListener(events[deviceType].up, eventUp, false);
   window.addEventListener(events[deviceType].move, eventMove, false);
 };
+
+// Proteksi isolasi scroll untuk elemen galeri dan daftar ucapan
+var initScrollProtections = function () {
+  var galleryGrid = document.getElementById("galleryGrid");
+  if (galleryGrid) {
+    var stopSlideSwipe = function (e) {
+      e.stopPropagation();
+    };
+    ["touchstart", "touchmove", "touchend", "wheel", "mousedown", "mousemove"].forEach(function (evt) {
+      galleryGrid.addEventListener(evt, stopSlideSwipe, { passive: true });
+    });
+  }
+  var ucapanBox = document.getElementById("daftarUcapanContainer");
+  if (ucapanBox) {
+    var stopUcapanSwipe = function (e) {
+      e.stopPropagation();
+    };
+    ["touchstart", "touchmove", "touchend", "wheel", "mousedown", "mousemove"].forEach(function (evt) {
+      ucapanBox.addEventListener(evt, stopUcapanSwipe, { passive: true });
+    });
+  }
+};
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  initScrollProtections();
+} else {
+  document.addEventListener("DOMContentLoaded", initScrollProtections);
+}
 
 // autoplay invitation (dinonaktifkan agar tidak pindah otomatis sendiri)
 var autoPlay = null;
